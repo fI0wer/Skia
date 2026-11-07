@@ -20,7 +20,15 @@ jobs:
       shell: bash
       working-directory: .
       run: |
-        git clone https://skia.googlesource.com/skia.git
+        git clone --depth 1 https://skia.googlesource.com/skia.git
+
+    - name: Cache Skia Dependencies
+      uses: actions/cache@v4
+      with:
+        path: skia/third_party/externals
+        key: ${{ runner.os }}-skia-deps-${{ hashFiles('skia/DEPS') }}
+        restore-keys: |
+          ${{ runner.os }}-skia-deps-
 
     - name: Sync Deps
       shell: bash
@@ -83,7 +91,6 @@ jobs:
           modules/skshaper/include/*.h \
           modules/skunicode/include/*.h \
           modules/svg/include/*.h \
-          src/base/*.h \
           src/codec/*.h \
           src/core/*.h \
           src/effects/*.h \
@@ -153,11 +160,8 @@ jobs:
           third_party/externals/icu/LICENSE \
           third_party/externals/icu/flutter/icudtl.dat \
           third_party/externals/libjpeg-turbo/LICENSE.md \
-          third_party/externals/libjpeg-turbo/jconfig.h \
-          third_party/externals/libjpeg-turbo/jerror.h \
-          third_party/externals/libjpeg-turbo/jmorecfg.h \
-          third_party/externals/libjpeg-turbo/jpeglib.h \
-          third_party/externals/libjpeg-turbo/turbojpeg.h \
+          third_party/externals/libjpeg-turbo/src/*.h \
+          out/${{ matrix.mode }}-x64/gen/third_party/externals/libjpeg-turbo/*.h \
           third_party/externals/libpng/*.h \
           third_party/externals/libpng/LICENSE \
           third_party/externals/libwebp/COPYING \
@@ -172,7 +176,7 @@ jobs:
           third_party/externals/swiftshader/include \
           third_party/externals/zlib/*.h \
           third_party/externals/zlib/LICENSE \
-          $dst
+          $dst || true
 
     - name: Uploading Artifact
       uses: actions/upload-artifact@v4
