@@ -43,21 +43,17 @@ jobs:
       run: |
         git clone https://skia.googlesource.com/skia.git
 
-    - name: Download depot_tools
-      shell: bash
-      run: |
-        git clone 'https://chromium.googlesource.com/chromium/tools/depot_tools.git'
-        echo "${PWD}/depot_tools" >> $GITHUB_PATH
-
     - name: Sync Deps
       shell: bash
       env:
         GIT_SYNC_DEPS_SKIP_EMSDK: true
       run: python tools/git-sync-deps
 
-    - name: Fetch Ninja
+    - name: Fetch GN and Ninja
       shell: bash
-      run: python bin/fetch-ninja
+      run: |
+        python bin/fetch-gn
+        python bin/fetch-ninja
 
     - name: Install LLVM and Clang 18
       if: runner.os == 'Windows'
@@ -83,10 +79,14 @@ jobs:
           else
             export gn_flags="$gn_flags extra_cflags=[\"-fms-runtime-lib=static\"]"
           fi
+          GN=bin/gn.exe
         else
           export gn_flags='cc="clang" cxx="clang++"'
+          GN=bin/gn
         fi
-        gn gen out/${{ matrix.mode }}-${{ matrix.arch }} --args="is_debug=$is_debug is_official_build=$is_official skia_use_system_expat=false skia_use_system_icu=false skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false skia_use_freetype=true skia_use_harfbuzz=true skia_pdf_subset_harfbuzz=true skia_use_system_freetype2=false skia_use_system_harfbuzz=false target_cpu=\"${{ matrix.arch }}\" $gn_flags"
+        
+        # 使用独立下载的 gn
+        $GN gen out/${{ matrix.mode }}-${{ matrix.arch }} --args="is_debug=$is_debug is_official_build=$is_official skia_use_system_expat=false skia_use_system_icu=false skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false skia_use_freetype=true skia_use_harfbuzz=true skia_pdf_subset_harfbuzz=true skia_use_system_freetype2=false skia_use_system_harfbuzz=false target_cpu=\"${{ matrix.arch }}\" $gn_flags"
 
     - name: Compiling
       shell: bash
@@ -219,3 +219,4 @@ jobs:
       with:
         name: Skia-${{ runner.os }}-${{ matrix.mode }}-${{ matrix.arch }}
         path: skia/Skia-${{ runner.os }}-${{ matrix.mode }}-${{ matrix.arch }}
+        retention-days: 3
